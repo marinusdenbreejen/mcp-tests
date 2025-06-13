@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<title>MCP Weather Chat</title>
+
+<body class="bg-gray-50 text-gray-800 font-sans leading-relaxed">
+  <div class="max-w-2xl mx-auto p-6">
+    <h2 class="text-2xl font-semibold mb-4">MCP Weather Chat</h2>
+
+    <!-- chat log -->
+    <div id="log" class="space-y-4 mb-6"></div>
+
+    <!-- input -->
+    <input id="in"
+           class="w-full p-3 border rounded-xl focus:outline-none focus:ring ring-indigo-300"
+           placeholder="Type a question and press Enter…"
+           autofocus>
+  </div>
+
+  <!-- Marked.js for Markdown ➜ HTML -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <script>
+    // escape HTML for safe user echo
+    const escapeHtml = (str) => str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+    // Add a markdown‑aware entry to the log
+    function logMessage(role, text) {
+      const log = document.getElementById('log');
+      const wrapper = document.createElement('div');
+      wrapper.className = role === 'user' ? 'text-right' : 'text-left';
+
+      const bubble = document.createElement('div');
+      bubble.className =
+        (role === 'user'
+          ? 'bg-indigo-100 inline-block p-3 rounded-xl'
+          : 'bg-white border inline-block p-3 rounded-xl shadow') +
+        ' prose max-w-full';
+
+      // Convert markdown (AI) or escape html (user)
+      bubble.innerHTML = role === 'ai'
+        ? marked.parse(text)
+        : escapeHtml(text);
+
+      wrapper.appendChild(bubble);
+      log.appendChild(wrapper);
+      // scroll to bottom
+      log.scrollTop = log.scrollHeight;
+    }
+
+    document.getElementById('in').addEventListener('keydown', async (e) => {
+      if (e.key !== 'Enter') return;
+
+      const msg = e.target.value.trim();
+      if (!msg) return;
+
+      logMessage('user', msg);
+      e.target.value = '';
+
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg })
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          logMessage('ai', `**Fout ${res.status}**: ${text}`);
+          return;
+        }
+        const { answer } = await res.json();
+        logMessage('ai', answer);
+      } catch (err) {
+        logMessage('ai', `**Netwerkfout:** ${err}`);
+      }
+    });
+  </script>
+</body>
+</html>
