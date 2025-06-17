@@ -2,19 +2,129 @@
 <html lang="en">
 <meta charset="utf-8">
 <title>MCP Weather Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body {
+    background: #fff8f3;
+    color: #222;
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 38rem;
+    margin: 2.5rem auto;
+    background: #fff;
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 32px 0 #ff91001a;
+    padding: 2.5rem 2rem 2rem 2rem;
+    border: 2px solid #ff9100;
+    position: relative;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #ff9100;
+    padding-bottom: 1rem;
+  }
+  .header-icon {
+    font-size: 2.2rem;
+    color: #ff9100;
+  }
+  .header-title {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -1px;
+  }
+  #log {
+    min-height: 200px;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+  }
+  .msg-wrapper {
+    display: flex;
+    margin-bottom: 1.2rem;
+  }
+  .msg-wrapper.user {
+    justify-content: flex-end;
+  }
+  .msg-wrapper.ai {
+    justify-content: flex-start;
+  }
+  .bubble {
+    max-width: 80%;
+    padding: 1rem 1.2rem;
+    border-radius: 1.2rem;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    box-shadow: 0 2px 8px 0 #ff91001a;
+    position: relative;
+    word-break: break-word;
+  }
+  .bubble.user {
+    background: linear-gradient(90deg, #ff9100 0%, #ffb300 100%);
+    color: #fff;
+    border-bottom-right-radius: 0.3rem;
+    border: 2px solid #ff9100;
+    font-weight: 500;
+  }
+  .bubble.ai {
+    background: #fff8f3;
+    color: #222;
+    border: 2px solid #ff9100;
+    border-bottom-left-radius: 0.3rem;
+  }
+  .bubble.thinking {
+    font-style: italic;
+    color: #ff9100;
+    background: #fff3e0;
+    border-style: dashed;
+    border-width: 2px;
+    border-color: #ff9100;
+    opacity: 0.85;
+  }
+  #in {
+    width: 100%;
+    padding: 1rem 1.2rem;
+    border: 2px solid #ff9100;
+    border-radius: 1.2rem;
+    font-size: 1.1rem;
+    outline: none;
+    transition: box-shadow 0.2s;
+    margin-bottom: 0.5rem;
+    background: #fff8f3;
+  }
+  #in:focus {
+    box-shadow: 0 0 0 3px #ff910055;
+    border-color: #ff9100;
+  }
+  .footer {
+    text-align: center;
+    color: #ff9100;
+    font-size: 0.95rem;
+    margin-top: 2rem;
+    opacity: 0.7;
+  }
+</style>
 
-<body class="bg-gray-50 text-gray-800 font-sans leading-relaxed">
-  <div class="max-w-2xl mx-auto p-6">
-    <h2 class="text-2xl font-semibold mb-4">MCP Weather Chat</h2>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="header-icon">☀️</span>
+      <span class="header-title">MCP supported Chat</span>
+    </div>
 
     <!-- chat log -->
-    <div id="log" class="space-y-4 mb-6"></div>
+    <div id="log"></div>
 
     <!-- input -->
     <input id="in"
-           class="w-full p-3 border rounded-xl focus:outline-none focus:ring ring-indigo-300"
            placeholder="Type a question and press Enter…"
+           autocomplete="off"
            autofocus>
+    <div class="footer">Powered by MCP &middot; Weather &amp; Energy Assistant</div>
   </div>
 
   <!-- Marked.js for Markdown ➜ HTML -->
@@ -30,27 +140,38 @@
       .replace(/'/g, "&#039;");
 
     // Add a markdown‑aware entry to the log
-    function logMessage(role, text) {
+    function logMessage(role, text, opts = {}) {
       const log = document.getElementById('log');
       const wrapper = document.createElement('div');
-      wrapper.className = role === 'user' ? 'text-right' : 'text-left';
+      wrapper.className = `msg-wrapper ${role}`;
 
       const bubble = document.createElement('div');
-      bubble.className =
-        (role === 'user'
-          ? 'bg-indigo-100 inline-block p-3 rounded-xl'
-          : 'bg-white border inline-block p-3 rounded-xl shadow') +
-        ' prose max-w-full';
+      bubble.className = `bubble ${role}` + (opts.thinking ? ' thinking' : '');
 
       // Convert markdown (AI) or escape html (user)
-      bubble.innerHTML = role === 'ai'
-        ? marked.parse(text)
-        : escapeHtml(text);
+      if (role === 'ai' && !opts.thinking) {
+        bubble.innerHTML = marked.parse(text);
+      } else {
+        bubble.innerHTML = escapeHtml(text);
+      }
 
       wrapper.appendChild(bubble);
       log.appendChild(wrapper);
       // scroll to bottom
       log.scrollTop = log.scrollHeight;
+      return bubble;
+    }
+
+    // Show "AI is thinking..." indicator
+    let thinkingBubble = null;
+    function showThinking() {
+      thinkingBubble = logMessage('ai', 'Thinking…', { thinking: true });
+    }
+    function hideThinking() {
+      if (thinkingBubble) {
+        thinkingBubble.parentElement.remove();
+        thinkingBubble = null;
+      }
     }
 
     document.getElementById('in').addEventListener('keydown', async (e) => {
@@ -62,6 +183,8 @@
       logMessage('user', msg);
       e.target.value = '';
 
+      showThinking();
+
       try {
         const res = await fetch('/chat', {
           method: 'POST',
@@ -69,15 +192,18 @@
           body: JSON.stringify({ message: msg })
         });
 
+        hideThinking();
+
         if (!res.ok) {
           const text = await res.text();
-          logMessage('ai', `**Fout ${res.status}**: ${text}`);
+          logMessage('ai', `**Error ${res.status}**: ${text}`);
           return;
         }
         const { answer } = await res.json();
         logMessage('ai', answer);
       } catch (err) {
-        logMessage('ai', `**Netwerkfout:** ${err}`);
+        hideThinking();
+        logMessage('ai', `**Network error:** ${err}`);
       }
     });
   </script>
