@@ -1,69 +1,69 @@
 # 🧪 mcp‑tests
 
-Repository met test‑setup voor de MCP‑gebaseerde Weather + Energy Assistant.
+Repository with test setup for the MCP-based Weather + Energy Assistant.
 
-## 🚀 Inhoud
+## 🚀 Contents
 
-- `app.py` – FastAPI‑server met integratie van OpenAI en MCP‑servers voor weer- en energie-API’s.  
-- `weather_mcp.py` – Standaard MCP‑subserver voor weerdata (current + forecast).  
-- `energy_mcp_nordpool.py` – MCP‑subserver voor Nord Pool day‑ahead en uur‑forecast prijzen.  
-- `test.py`, `test2.py` – Scripts om de Nord Pool‑fetcher en MCP‑componenten buiten LLM te testen.
+- `app.py` – FastAPI server integrating OpenAI and MCP servers for weather and energy APIs.  
+- `weather_mcp.py` – Standard MCP subserver for weather data (current + forecast).  
+- `energy_mcp_nordpool.py` – MCP subserver for Nord Pool day-ahead and hourly forecast prices.  
+- `test.py`, `test2.py` – Scripts to test the Nord Pool fetcher and MCP components outside the LLM.
 
-## 🔧 Installatie
+## 🔧 Installation
 
-1. Clone de repo:
+1. Clone the repo:
    ```bash
    git clone https://github.com/marinusdenbreejen/mcp-tests.git
    cd mcp-tests
    ```
-2. Maak en activeer virtuele omgeving:
+2. Create and activate a virtual environment:
    ```bash
    python -m venv .venv
    source .venv/bin/activate  # macOS/Linux
    .venv\Scripts\activate     # Windows
    ```
-3. Installeer dependencies:
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-   *Zorg dat je in `.env` hebt:*  
+   *Make sure your `.env` contains:*  
    ```
    OPENAI_API_KEY=...
    WEATHER_API_KEY=...
    ```
 
-## 🧩 Gebruik
+## 🧩 Usage
 
-Start de app via:
+Start the app with:
 ```bash
 python app.py
 ```
-Dan draait FastAPI lokaal op http://127.0.0.1:8000.
+FastAPI will then run locally at http://127.0.0.1:8000.
 
 ### Tests
 
-- Haal alleen energie-prijzen op zonder LLM:
+- Fetch only energy prices without LLM:
   ```bash
   python test2.py
   ```
-- Test MCP‑server tooling separat:
+- Test MCP server tooling separately:
   ```bash
   python test.py
   ```
 
-## 📚 Structuur
+## 📚 Structure
 
-- **`_fetch_prices()`** in `energy_mcp_nordpool.py`: haalt today/tomorrow prijzen op.
-- **`day_ahead_price`**: gemiddelde dagprijs.
-- **`price_forecast`**: goedkoopste en duurste uur voor komende X uur.
+- **`_fetch_prices()`** in `energy_mcp_nordpool.py`: fetches today/tomorrow prices.
+- **`day_ahead_price`**: average day price.
+- **`price_forecast`**: cheapest and most expensive hour for the coming X hours.
 
-## 🧠 Verder
+## 🧠 Further
 
-- Voeg Nord Pool tomorrow-optie toe aan `day_ahead_price` tool.
-- Combineer met weer-data voor slimme timing advies.
-- Voeg extra MCP‑tools toe, bijvoorbeeld tariefdata, energiebesparingstips.
+- Add Nord Pool tomorrow option to the `day_ahead_price` tool.
+- Combine with weather data for smart timing advice.
+- Add extra MCP tools, e.g., tariff data, energy saving tips.
 
 ---
 
-**Auteur**: Marinus den Breejen  
+**Author**: Marinus den Breejen  
 Repository: `mcp-tests`
